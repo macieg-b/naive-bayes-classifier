@@ -3,14 +3,23 @@ import numpy as np
 
 
 class NaiveBayes:
-    __decisions_distribution = dict()
-    __conditional_distribution = dict()
 
     def __init__(self):
+        self.__decisions_distribution = dict()
+        self.__conditional_distribution = dict()
+        self.__teach_length = 0
+        self.__attributes_amount = 0
+        self.__la_place = False
         pass
 
-    def fit(self, data, attributes):
-        for probe in data:
+    def la_place(self, use):
+        if type(use) is bool:
+            self.__la_place = use
+
+    def fit(self, teach_data, attributes):
+        self.__attributes_amount = len(attributes) - 1
+        self.__teach_length = len(teach_data)
+        for probe in teach_data:
             key = probe[len(probe) - 1]
             try:
                 self.__decisions_distribution[key] += 1
@@ -22,25 +31,51 @@ class NaiveBayes:
                         self.__conditional_distribution[key, attributes[i]] += 1
                     except KeyError:
                         self.__conditional_distribution[key, attributes[i]] = 1
-        for animal_class in self.__decisions_distribution:
-            self.__decisions_distribution[animal_class] /= float(len(data))
-        for item in self.__conditional_distribution:
-            self.__conditional_distribution[item] /= float(len(data))
+                elif probe[i] == "false":
+                    try:
+                        self.__conditional_distribution[key, attributes[i]] += 0
+                    except KeyError:
+                        self.__conditional_distribution[key, attributes[i]] = 0
         pass
 
     def predict_probe(self, probe, attributes):
         final_conditional_probability = dict()
-        for animal_class in self.__decisions_distribution:
-            attributes_probability = []
-            for i in range(0, len(attributes)):
-                if probe[i] == "true":
-                    try:
-                        attributes_probability.append(self.__conditional_distribution[animal_class, attributes[i]])
-                    except KeyError:
-                        attributes_probability.append(0)
+        if self.__la_place:
+            for animal_class in self.__decisions_distribution:
+                attributes_probability = []
+                for i in range(0, len(attributes)):
+                    if probe[i] == "true":
+                        probability = (self.__conditional_distribution[animal_class, attributes[i]] + 1) / float(
+                            self.__decisions_distribution[animal_class] + self.__attributes_amount)
+                        attributes_probability.append(probability)
+                    elif probe[i] == "false":
+                        probability = (self.__conditional_distribution[animal_class, attributes[i]] + 1) / float(
+                            self.__decisions_distribution[animal_class] + self.__attributes_amount)
+                        complement = 1 - probability
+                        attributes_probability.append(complement)
+                class_probability = (self.__decisions_distribution[animal_class] + 1) / float(
+                    self.__teach_length + self.__attributes_amount)
+                attributes_probability.append(class_probability)
+                final_conditional_probability[animal_class] = np.prod(np.array(attributes_probability))
+        else:
+            for animal_class in self.__decisions_distribution:
+                attributes_probability = []
+                for i in range(0, len(attributes)):
+                    if probe[i] == "true":
+                        probability = self.__conditional_distribution[animal_class, attributes[i]] / float(
+                            self.__decisions_distribution[animal_class])
+                        attributes_probability.append(probability)
+                    elif probe[i] == "false":
+                        probability = self.__conditional_distribution[animal_class, attributes[i]] / float(
+                            self.__decisions_distribution[animal_class])
+                        complement = 1 - probability
+                        attributes_probability.append(complement)
+                class_probability = self.__decisions_distribution[animal_class] / float(self.__teach_length)
+                attributes_probability.append(class_probability)
+                final_conditional_probability[animal_class] = np.prod(np.array(attributes_probability))
 
-            final_conditional_probability[animal_class] = np.prod(np.array(attributes_probability)) * self.__decisions_distribution[animal_class]
-        return max(final_conditional_probability, key=final_conditional_probability.get)
+        return max(final_conditional_probability, key=final_conditional_probability.get), final_conditional_probability[
+            max(final_conditional_probability, key=final_conditional_probability.get)]
 
 
 class BayesUtil:
@@ -68,14 +103,27 @@ class BayesUtil:
     pass
 
     @staticmethod
-    def divide_data(data):
+    def divide_data(data, ratio):
         random.shuffle(data)
-        teach_size = len(data) * 2 / 3
+        teach_size = int(len(data) * ratio)
         return data[:teach_size], data[teach_size:]
 
     @staticmethod
     def is_classified_properly(probe, selected_class):
         correct = False
-        if probe[len(probe)-1] == selected_class:
+        if probe[len(probe) - 1] == selected_class:
             correct = True
         return correct
+
+    @staticmethod
+    def bayes_error(result, predict_result):
+        if len(result) != len(predict_result):
+            raise Exception("Arguments length error!")
+
+        correct = 0
+        for i in range(0, len(result)):
+            if result[i] == predict_result[i]:
+                correct += 1
+        accuracy = correct / float(len(result))
+        error = 1 - accuracy
+        return error, accuracy
