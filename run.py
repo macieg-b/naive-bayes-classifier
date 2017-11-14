@@ -48,8 +48,6 @@ for i in range(0, REPETITION):
         error, accuracy = BayesUtil.bayes_error(classes, predicted_classes)
         error_laplace, accuracy_laplace = BayesUtil.bayes_error(classes_laplace, predicted_classes_laplace)
 
-        if j-1 == 0:
-            a = "test"
         accuracy_array[j - 1] += accuracy
         accuracy_array_laplace[j - 1] += accuracy_laplace
 
