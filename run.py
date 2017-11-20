@@ -1,11 +1,12 @@
 import arff
 import matplotlib.pyplot as plt
+from scipy.signal import savgol_filter
 
 from model import BayesUtil, NaiveBayes
 import numpy as np
 
 FILE_PATH = "data/zoo.arff"
-REPETITION = 50
+REPETITION = 100
 data_set = arff.load(open(FILE_PATH, 'rb'))
 data = data_set['data']
 attributes = data_set['attributes']
@@ -52,7 +53,23 @@ for i in range(0, REPETITION):
         accuracy_array_laplace[j - 1] += accuracy_laplace
 
 accuracy_array /= float(REPETITION)
+
 accuracy_array_laplace /= float(REPETITION)
+plt.figure()
+plt.title("Classification accuracy")
+plt.xlabel("Teaching probes amount - alfa")
+plt.ylabel("Accuracy")
+plt.plot(x_vector, accuracy_array, '#ff796c')
+plt.plot(x_vector, accuracy_array_laplace, '#0165fc')
+plt.legend(('Naive', 'La Place'),
+           loc='center right')
+plt.axis([0, 100, 0, 1.05])
+plt.show()
+
+
+accuracy_array = savgol_filter(accuracy_array, 7, 1, mode='nearest')
+accuracy_array_laplace = savgol_filter(accuracy_array_laplace, 7, 1, mode='nearest')
+
 
 plt.figure()
 plt.title("Classification accuracy")
