@@ -8,7 +8,6 @@ class NaiveBayes:
         self.__decisions_distribution = dict()
         self.__conditional_distribution = dict()
         self.__teach_length = 0
-        self.__attributes_amount = 0
         self.__la_place = False
         pass
 
@@ -17,7 +16,6 @@ class NaiveBayes:
             self.__la_place = use
 
     def fit(self, teach_data, attributes):
-        self.__attributes_amount = len(attributes) - 1
         self.__teach_length = len(teach_data)
         for probe in teach_data:
             key = probe[len(probe) - 1]
@@ -46,15 +44,15 @@ class NaiveBayes:
                 for i in range(0, len(attributes)):
                     if probe[i] == "true":
                         probability = (self.__conditional_distribution[animal_class, attributes[i]] + 1) / float(
-                            self.__decisions_distribution[animal_class] + self.__attributes_amount)
+                            self.__decisions_distribution[animal_class] + 2)
                         attributes_probability.append(probability)
                     elif probe[i] == "false":
                         probability = (self.__conditional_distribution[animal_class, attributes[i]] + 1) / float(
-                            self.__decisions_distribution[animal_class] + self.__attributes_amount)
+                            self.__decisions_distribution[animal_class] + 2)
                         complement = 1 - probability
                         attributes_probability.append(complement)
                 class_probability = (self.__decisions_distribution[animal_class] + 1) / float(
-                    self.__teach_length + self.__attributes_amount)
+                    self.__teach_length + 2)
                 attributes_probability.append(class_probability)
                 final_conditional_probability[animal_class] = np.prod(np.array(attributes_probability))
         else:
